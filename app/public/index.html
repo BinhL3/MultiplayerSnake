@@ -1,5 +1,15 @@
 <!DOCTYPE html>
 <html>
+<head> 
+    <meta charset="UTF-8" />
+    <title>Multiplayer Snake</title>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.js"></script>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
 <body>
 
 <h1>
@@ -11,8 +21,40 @@ Multiplayer Snake
 <input id="username" type="text" name="username">
 </div>
 <button id="submit">Play</button>
+<div></div>
+<script type="text/javascript">
 
-<script>
+var config = {
+    type: Phaser.AUTO,
+    width: 800,
+    height: 600,
+
+    scene: {
+        preload: preload,
+        create: create,
+        update: update
+    }
+};
+
+    var game = new Phaser.Game(config);
+
+    function preload ()
+    {
+        this.load.image('grass', 'assets/grass.png');
+        this.load.image('apple', 'assets/apple.png');
+        this.load.image('snake', 'assets/head_up.png');
+
+    }
+
+    function create ()
+    {
+        var grid = this.add.grid(400, 300, 800, 600, 32, 32, 0x00ff00).setAltFillStyle(0x006400).setOutlineStyle() ;
+    }
+
+    function update ()
+    {
+    }
+
 </script>
 </body>
 </html>
