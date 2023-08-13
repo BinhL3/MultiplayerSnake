@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <title>Multiplayer Snake</title>
     <script src="//cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <style type="text/css">
         body {
             margin: 0;
@@ -60,6 +61,7 @@ function preload ()
 
 function create ()
 {
+    this.socket = io();
     var Food = new Phaser.Class({
 
         Extends: Phaser.GameObjects.Image,
@@ -167,7 +169,7 @@ function create ()
                     break;
 
                 case RIGHT:
-                    this.headPosition.x = Phaser.Math.Wrap(this.headPosition.x + 1, 0, gridWidth);
+                    this.headPosition.x = Phaser.Math.Wrap(this.headPosition.x + 1, -1, gridWidth);
                     break;
 
                 case UP:
@@ -175,7 +177,7 @@ function create ()
                     break;
 
                 case DOWN:
-                    this.headPosition.y = Phaser.Math.Wrap(this.headPosition.y + 1, 0, gridHeight);
+                    this.headPosition.y = Phaser.Math.Wrap(this.headPosition.y + 1, -1, gridHeight);
                     break;
             }
 
@@ -237,7 +239,6 @@ function create ()
 
         updateGrid: function (grid)
         {
-            //  Remove all body pieces from valid positions list
             this.body.children.each(function (segment) {
 
                 var bx = segment.x / gridSize;
@@ -251,6 +252,7 @@ function create ()
         }
 
     });
+
     let grid = this.add.grid(config.width / 2, config.height / 2, config.width, config.height, gridSize, gridSize, 0xacd05e).setAltFillStyle(0xb3d665).setOutlineStyle();
     food = new Food(this, 3, 4);
     snake = new Snake(this, 8, 8);
@@ -265,13 +267,6 @@ function update (time, delta)
         return;
     }
 
-    /**
-    * Check which key is pressed, and then change the direction the snake
-    * is heading based on that. The checks ensure you don't double-back
-    * on yourself, for example if you're moving to the right and you press
-    * the LEFT cursor, it ignores it, because the only valid directions you
-    * can move in at that time is up and down.
-    */
     if (cursors.left.isDown)
     {
         snake.faceLeft();
@@ -291,7 +286,6 @@ function update (time, delta)
 
     if (snake.update(time))
     {
-        //  If the snake updated, we need to check for collision against food
 
         if (snake.collideWithFood(food))
         {
@@ -300,21 +294,8 @@ function update (time, delta)
     }
 }
 
-/**
-* We can place the food anywhere in our gridWidthxgridHeight grid
-* *except* on-top of the snake, so we need
-* to filter those out of the possible food locations.
-* If there aren't any locations left, they've won!
-*
-* @method repositionFood
-* @return {boolean} true if the food was placed, otherwise false
-*/
 function repositionFood ()
 {
-    //  First create an array that assumes all positions
-    //  are valid for the new piece of food
-
-    //  A Grid we'll use to reposition the food each time it's eaten
     var testGrid = [];
 
     for (var y = 0; y < gridHeight; y++)
@@ -329,7 +310,6 @@ function repositionFood ()
 
     snake.updateGrid(testGrid);
 
-    //  Purge out false positions
     var validLocations = [];
 
     for (var y = 0; y < gridHeight; y++)
@@ -338,7 +318,6 @@ function repositionFood ()
         {
             if (testGrid[y][x] === true)
             {
-                //  Is this position valid for food? If so, add it here ...
                 validLocations.push({ x: x, y: y });
             }
         }
