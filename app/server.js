@@ -13,21 +13,21 @@ let express = require("express");
 
  var players = {};
 
- io.on('connection', function (socket) {
-    let playerId = socket.id;
-    console.log(`Player ${playerId} connected`);
-    players[playerId] = {
-      x: Math.floor(Math.random() * 800),
-      y: Math.floor(Math.random() * 600),
-      playerId: playerId
-    }
-    socket.emit('currentPlayers', players);
-    socket.on('disconnect', () => {
-      delete players[playerId];
-      console.log(`Player ${playerId} disconnected`);
-    });
+  io.on('connection', function (socket) {
+      let playerId = socket.id;
+      console.log(`Player ${playerId} connected`);
+      players[playerId] = {
+        x: Math.floor(Math.random() * 800),
+        y: Math.floor(Math.random() * 600),
+        playerId: playerId
+      }
+      socket.emit('currentPlayers', players);
+      socket.on('disconnect', () => {
+        delete players[playerId];
+        console.log(`Player ${playerId} disconnected`);
+      });
  });
 
  server.listen(port, hostname, () => {
-   console.log(`http://${hostname}:${port}`);
+    console.log(`http://${hostname}:${port}`);
  });
