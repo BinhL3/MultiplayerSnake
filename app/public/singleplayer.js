@@ -28,7 +28,8 @@ function preload ()
 {
     this.load.image('grass', 'assets/grass.png');
     this.load.image('food', 'assets/apple.png');
-    this.load.image('body', 'assets/head_up.png');
+    this.load.image('body_vertical', 'assets/body_vertical.png');
+    this.load.image('body_vertical_alternate', 'assets/body_vertical copy.png');
     this.load.image('headUp', 'assets/head_up.png');
     this.load.image('headDown', 'assets/head_down.png');
     this.load.image('headLeft', 'assets/head_left.png');
@@ -189,8 +190,16 @@ function create ()
         },
 
         grow: function ()
-        {
-            var newPart = this.body.create(this.tail.x, this.tail.y, 'body');
+        {   
+            //add alternating body texture
+            if ( this.body.getChildren().length % 2 == 0){
+                var newPart = this.body.create(this.tail.x, this.tail.y, 'body_vertical');
+            }else{
+                var newPart = this.body.create(this.tail.x, this.tail.y, 'body_vertical_alternate');
+            }
+
+
+            
 
             newPart.setOrigin(0);
         },
