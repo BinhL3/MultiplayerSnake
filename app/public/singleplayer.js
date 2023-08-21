@@ -16,7 +16,7 @@ var gridHeight = config.height / gridSize;
 
 var cursors;
 
-//  Direction consts
+//  Direction const
 var UP = 0;
 var DOWN = 1;
 var LEFT = 2;
@@ -28,7 +28,12 @@ function preload ()
 {
     this.load.image('grass', 'assets/grass.png');
     this.load.image('food', 'assets/apple.png');
-    this.load.image('body', 'assets/head_up.png');
+    this.load.image('body_vertical', 'assets/body_vertical.png');
+    this.load.image('body_vertical_alternate', 'assets/body_vertical copy.png');
+    this.load.image('headUp', 'assets/head_up.png');
+    this.load.image('headDown', 'assets/head_down.png');
+    this.load.image('headLeft', 'assets/head_left.png');
+    this.load.image('headRight', 'assets/head_right.png');
 }
 
 function create ()
@@ -70,7 +75,8 @@ function create ()
 
             this.body = scene.add.group();
 
-            this.head = this.body.create(x * gridSize, y * gridSize, 'body');
+            this.head = this.body.create(x * gridSize, y * gridSize, 'headRight');
+            //setting origin to center of sprite for better rotation
             this.head.setOrigin(0);
 
             this.alive = true;
@@ -82,6 +88,7 @@ function create ()
             this.tail = new Phaser.Geom.Point(x, y);
 
             this.heading = RIGHT;
+         
             this.direction = RIGHT;
             this.id = id || 'self';
         },
@@ -99,6 +106,7 @@ function create ()
             if (this.direction === UP || this.direction === DOWN)
             {
                 this.heading = LEFT;
+             
             }
         },
 
@@ -107,6 +115,7 @@ function create ()
             if (this.direction === UP || this.direction === DOWN)
             {
                 this.heading = RIGHT;
+               
             }
         },
 
@@ -115,6 +124,7 @@ function create ()
             if (this.direction === LEFT || this.direction === RIGHT)
             {
                 this.heading = UP;
+              
             }
         },
 
@@ -123,6 +133,7 @@ function create ()
             if (this.direction === LEFT || this.direction === RIGHT)
             {
                 this.heading = DOWN;
+               
             }
         },
 
@@ -132,18 +143,22 @@ function create ()
             {
                 case LEFT:
                     this.headPosition.x = Phaser.Math.Wrap(this.headPosition.x - 1, 0, gridWidth);
+                    this.head.setTexture("headLeft");
                     break;
 
                 case RIGHT:
                     this.headPosition.x = Phaser.Math.Wrap(this.headPosition.x + 1, -1, gridWidth);
+                    this.head.setTexture("headRight");
                     break;
 
                 case UP:
                     this.headPosition.y = Phaser.Math.Wrap(this.headPosition.y - 1, 0, gridHeight);
+                    this.head.setTexture("headUp");
                     break;
 
                 case DOWN:
                     this.headPosition.y = Phaser.Math.Wrap(this.headPosition.y + 1, -1, gridHeight);
+                    this.head.setTexture("headDown");
                     break;
             }
 
@@ -175,8 +190,16 @@ function create ()
         },
 
         grow: function ()
-        {
-            var newPart = this.body.create(this.tail.x, this.tail.y, 'body');
+        {   
+            //add alternating body texture
+            if ( this.body.getChildren().length % 2 == 0){
+                var newPart = this.body.create(this.tail.x, this.tail.y, 'body_vertical');
+            }else{
+                var newPart = this.body.create(this.tail.x, this.tail.y, 'body_vertical_alternate');
+            }
+
+
+            
 
             newPart.setOrigin(0);
         },
