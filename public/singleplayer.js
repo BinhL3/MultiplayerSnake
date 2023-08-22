@@ -172,7 +172,8 @@ function create ()
 
             var hitBody = Phaser.Actions.GetFirst(this.body.getChildren(), { x: this.head.x, y: this.head.y }, 1);
 
-            if (hitBody)
+            if (hitBody || (this.headPosition.y >= gridHeight -1) || (this.headPosition.x >= gridWidth-1) 
+            || (this.headPosition.y <= 0) || (this.headPosition.x <= 0) )
             {
                 console.log('dead');
 
