@@ -1,5 +1,6 @@
 node_modules/.package-lock.json
 node_modules/.bin/mime
+node_modules
 node_modules/.bin/mime.cmd
 node_modules/.bin/mime.ps1
 node_modules/array-flatten/array-flatten.js
