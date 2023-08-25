@@ -26,9 +26,9 @@ io.on('connection', function (socket) {
   console.log('player [' + socket.id + '] connected')
 
   players[socket.id] = {
-    rotation: 0,
     x: 30,
     y: 30,
+    direction: "UP",
     playerId: socket.id,
     color: getRandomColor()
   }
@@ -44,7 +44,7 @@ io.on('connection', function (socket) {
   socket.on('playerMovement', function (movementData) {
     players[socket.id].x = movementData.x
     players[socket.id].y = movementData.y
-    players[socket.id].rotation = movementData.rotation
+    players[socket.id].direction = movementData.direction
 
     socket.broadcast.emit('playerMoved', players[socket.id])
   })

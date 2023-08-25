@@ -3,7 +3,8 @@ var config = {
     width: 800,
     height: 600,
     backgroundColor: '#bfcc00',
-    parent: 'phaser-example',
+    parent: 'mygame',
+    autoCenter: true,
     scene: {
         preload: preload,
         create: create,
@@ -144,17 +145,14 @@ function create ()
                     this.headPosition.x = Phaser.Math.Wrap(this.headPosition.x - 1, 0, gridWidth);
                     this.head.setTexture("headLeft");
                     break;
-        
                 case RIGHT:
                     this.headPosition.x = Phaser.Math.Wrap(this.headPosition.x + 1, -1, gridWidth);
                     this.head.setTexture("headRight");
                     break;
-        
                 case UP:
                     this.headPosition.y = Phaser.Math.Wrap(this.headPosition.y - 1, 0, gridHeight);
                     this.head.setTexture("headUp");
                     break;
-        
                 case DOWN:
                     this.headPosition.y = Phaser.Math.Wrap(this.headPosition.y + 1, -1, gridHeight);
                     this.head.setTexture("headDown");

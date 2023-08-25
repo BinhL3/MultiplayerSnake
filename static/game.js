@@ -1,9 +1,10 @@
 var config = {
     type: Phaser.AUTO,
-    parent: 'phaser-example',
+    parent: 'mygame',
     width: 800,
     height: 600,
     backgroundColor: '#ffffff',
+    autoCenter: true,
     physics: {
       default: 'arcade',
       arcade: {
@@ -24,6 +25,11 @@ var game = new Phaser.Game(config)
 function preload() {
     this.load.image('snake', 'static/assets/head_up.png');
     this.load.image('apple', 'static/assets/apple.png');
+    this.load.image('headUp', 'static/assets/head_up.png');
+    this.load.image('body_vertical', 'static/assets/body_vertical.png');
+    this.load.image('headDown', 'static/assets/head_down.png');
+    this.load.image('headLeft', 'static/assets/head_left.png');
+    this.load.image('headRight', 'static/assets/head_right.png');
 }
   
 function create() {
@@ -68,39 +74,35 @@ function create() {
     this.cursors = this.input.keyboard.createCursorKeys()
   
     this.socket.on('playerMoved', function (playerInfo) {
-        self.otherPlayers.getChildren().forEach(function (otherPlayer) {
-            if (playerInfo.playerId === otherPlayer.playerId) {
-                otherPlayer.setRotation(playerInfo.rotation)
-                otherPlayer.setPosition(playerInfo.x, playerInfo.y)
-            }
-        })
-    })
+      self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+          if (playerInfo.playerId === otherPlayer.playerId) {
+              otherPlayer.setPosition(playerInfo.x, playerInfo.y);
+              const imageKey = getImageForDirection(playerInfo.direction);
+              otherPlayer.setTexture(imageKey);  
+          }
+      })
+  })
     this.time.addEvent({
         delay: 200, // moving every 200ms
         callback: moveSnake,
         callbackScope: this,
         loop: true
     });
+
 }
   
 function addPlayer(self, playerInfo) {
-    self.snake = self.physics.add.image(playerInfo.x, playerInfo.y, 'snake')
-      .setOrigin(8, 8)
-      .setDisplaySize(40, 40)
-  
+    self.snake = self.physics.add.image(playerInfo.x, playerInfo.y, 'headRight').setOrigin(8, 8).setDisplaySize(40, 40)
+    self.snake.bodySegments = [];
     self.snake.setCollideWorldBounds(true)
     self.snake.setTint(playerInfo.color)
     self.snake.setDrag(1000)
     self.snake.currentDirection = self.directions.RIGHT;
-
+    self.snake.grow = false; 
 }
   
 function addOtherPlayers(self, playerInfo) {
-    const otherPlayer = self.physics.add.image(playerInfo.x, playerInfo.y, 'snake')
-      .setOrigin(8, 8)
-      .setDisplaySize(40, 40)
-      .setRotation(playerInfo.rotation)
-      
+    const otherPlayer = self.physics.add.image(playerInfo.x, playerInfo.y, 'snake').setOrigin(8, 8).setDisplaySize(40, 40);
     otherPlayer.playerId = playerInfo.playerId
     otherPlayer.setTint(playerInfo.color)
     self.otherPlayers.add(otherPlayer)
@@ -108,18 +110,26 @@ function addOtherPlayers(self, playerInfo) {
 function update() {
     if (this.snake) {
         if (this.cursors.up.isDown && this.snake.currentDirection.y === 0) {
-            this.snake.currentDirection = this.directions.UP;
+          this.snake.setTexture("headUp");
+          this.snake.currentDirection = this.directions.UP;
         } else if (this.cursors.down.isDown && this.snake.currentDirection.y === 0) {
+          this.snake.setTexture("headDown");
             this.snake.currentDirection = this.directions.DOWN;
         } else if (this.cursors.left.isDown && this.snake.currentDirection.x === 0) {
+          this.snake.setTexture("headLeft");
             this.snake.currentDirection = this.directions.LEFT;
         } else if (this.cursors.right.isDown && this.snake.currentDirection.x === 0) {
+          this.snake.setTexture("headRight");
             this.snake.currentDirection = this.directions.RIGHT;
         }
-        
+        this.physics.add.collider(this.snake, this.apple, handleAppleCollision, null, this);
+
+        let dirKey = Object.keys(this.directions).find(key => this.directions[key].equals(this.snake.currentDirection));
+
         const currPosition = {
             x: this.snake.x,
-            y: this.snake.y
+            y: this.snake.y,
+            direction: dirKey
         };
 
         if (this.snake.oldPosition && (
@@ -133,10 +143,46 @@ function update() {
 }
 
 function moveSnake() {
-    let oldHeadX = this.snake.x;
-    let oldHeadY = this.snake.y;
-    
-    this.snake.x += this.snake.currentDirection.x * gridSize;
-    this.snake.y += this.snake.currentDirection.y * gridSize;
-    
+  const oldHeadPos = { x: this.snake.x, y: this.snake.y };
+
+  this.snake.x += this.snake.currentDirection.x * gridSize;
+  this.snake.y += this.snake.currentDirection.y * gridSize;
+
+  let newPos = oldHeadPos;
+  for (let i = 0; i < this.snake.bodySegments.length; i++) {
+      const segment = this.snake.bodySegments[i];
+      const oldSegmentPos = { x: segment.x, y: segment.y };
+
+      segment.setPosition(newPos.x, newPos.y);
+
+      newPos = oldSegmentPos;  // The next segment will move to the current segment's old position
+  }
+
+  // Check if snake should grow
+  if (this.snake.grow) {
+      const lastSegment = this.snake.bodySegments[this.snake.bodySegments.length - 1] || this.snake;
+      const newSegment = this.physics.add.image(lastSegment.x, lastSegment.y, 'body_vertical')
+          .setOrigin(8, 8)
+          .setDisplaySize(40, 40)
+          .setTint(this.snake.tint);
+      
+      this.snake.bodySegments.push(newSegment);
+      this.snake.grow = false;
+  }
+}
+
+function handleAppleCollision(snake, apple) {
+  const randomX = Phaser.Math.Between(0, gridWidth - 1) * gridSize + gridSize / 2;
+  const randomY = Phaser.Math.Between(0, gridHeight - 1) * gridSize + gridSize / 2;
+  apple.setPosition(randomX, randomY);
+  snake.grow = true;
+}
+
+function getImageForDirection(direction) {
+  switch(direction) {
+      case 'UP': return 'headUp';
+      case 'DOWN': return 'headDown';
+      case 'LEFT': return 'headLeft';
+      case 'RIGHT': return 'headRight';
+  }
 }
