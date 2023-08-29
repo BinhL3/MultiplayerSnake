@@ -14,6 +14,9 @@ app.set('port', 3000)
 app.use('/static', express.static(__dirname + '/static'))
 
 app.get('/', function (request, response) {
+  response.sendFile(path.join(__dirname, 'main.html'))
+})
+app.get('/index.html', function (request, response) {
   response.sendFile(path.join(__dirname, 'index.html'))
 })
 
