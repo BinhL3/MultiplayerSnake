@@ -52,7 +52,8 @@ io.on('connection', function (socket) {
     y: 30,
     direction: "UP",
     playerId: socket.id,
-    color: getRandomColor()
+    color: getRandomColor(),
+    segments: []
   }
   socket.emit('currentPlayers', players)
   socket.broadcast.emit('newPlayer', players[socket.id])
@@ -73,7 +74,7 @@ io.on('connection', function (socket) {
     players[socket.id].x = movementData.x
     players[socket.id].y = movementData.y
     players[socket.id].direction = movementData.direction
-
+    players[socket.id].segments = movementData.segments;
     socket.broadcast.emit('playerMoved', players[socket.id])
   })
 })

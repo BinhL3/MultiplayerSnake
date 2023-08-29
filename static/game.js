@@ -1,4 +1,3 @@
-
 var config = {
   type: Phaser.AUTO,
   parent: 'mygame',
@@ -80,15 +79,18 @@ function create() {
 
   this.cursors = this.input.keyboard.createCursorKeys()
 
-  this.socket.on('playerMoved', function (playerInfo) {
-    self.otherPlayers.getChildren().forEach(function (otherPlayer) {
-        if (playerInfo.playerId === otherPlayer.playerId) {
-            otherPlayer.setPosition(playerInfo.x, playerInfo.y);
-            const imageKey = getImageForDirection(playerInfo.direction);
-            otherPlayer.setTexture(imageKey);  
-        }
-    })
-})
+this.socket.on('playerMoved', function (playerInfo) {
+  self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+    if (playerInfo.playerId === otherPlayer.playerId) {
+      otherPlayer.setPosition(playerInfo.x, playerInfo.y);
+      const imageKey = getImageForDirection(playerInfo.direction);
+      otherPlayer.setTexture(imageKey);
+      
+      updateOtherPlayerSegments.call(self, otherPlayer, playerInfo.segments);
+    }
+  });
+});
+
   this.time.addEvent({
       delay: 200,
       callback: moveSnake,
@@ -105,14 +107,13 @@ function addPlayer(self, playerInfo) {
   self.snake.setDrag(1000);
   self.snake.currentDirection = self.directions.RIGHT;
   self.snake.segments = [];
- 
-
 }
 
 function addOtherPlayers(self, playerInfo) {
   const otherPlayer = self.physics.add.image(playerInfo.x, playerInfo.y, 'snake').setOrigin(8, 8).setDisplaySize(40, 40);
-  otherPlayer.playerId = playerInfo.playerId
-  otherPlayer.setTint(playerInfo.color)
+  otherPlayer.playerId = playerInfo.playerId;
+  otherPlayer.setTint(playerInfo.color);
+  otherPlayer.segments = [];
   self.otherPlayers.add(otherPlayer)
 }
 
@@ -142,8 +143,9 @@ function update() {
       const currPosition = {
           x: this.snake.x,
           y: this.snake.y,
-          direction: dirKey
-      };
+          direction: dirKey,
+          segments: this.snake.segments.map(seg => ({ x: seg.x, y: seg.y })),
+        };
 
       if (this.snake.oldPosition && (
           currPosition.x !== this.snake.oldPosition.x ||
@@ -228,6 +230,7 @@ function moveSnake() {
     const removedSegment = this.snake.segments.pop();
     removedSegment.destroy();
   }
+
 }
 
 function handleAppleCollision(snake, apple) {
@@ -255,10 +258,36 @@ function handleAppleCollision(snake, apple) {
 }
 
 function getImageForDirection(direction) {
-switch(direction) {
-    case 'UP': return 'headUp';
-    case 'DOWN': return 'headDown';
-    case 'LEFT': return 'headLeft';
-    case 'RIGHT': return 'headRight';
+  switch(direction) {
+      case 'UP': return 'headUp';
+      case 'DOWN': return 'headDown';
+      case 'LEFT': return 'headLeft';
+      case 'RIGHT': return 'headRight';
+  }
 }
+
+function updateOtherPlayerSegments(otherPlayer, segments) {
+  if (otherPlayer.segments.length < segments.length) {
+    for (let i = otherPlayer.segments.length; i < segments.length; i++) {
+      const segmentData = segments[i];
+      const imageKey = i % 2 === 0 ? 'body_vertical' : 'body_vertical_alt';
+      const segment = this.physics.add
+        .image(segmentData.x, segmentData.y, imageKey)
+        .setOrigin(8, 8)
+        .setDisplaySize(40, 40);
+      otherPlayer.segments.push(segment);
+    }
+  }
+
+  for (let i = 0; i < segments.length; i++) {
+    const segmentData = segments[i];
+    const segment = otherPlayer.segments[i];
+    segment.x = segmentData.x;
+    segment.y = segmentData.y;
+  }
+
+  while (otherPlayer.segments.length > segments.length) {
+    const lastSegment = otherPlayer.segments.pop();
+    lastSegment.destroy();
+  }
 }
