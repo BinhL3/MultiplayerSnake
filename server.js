@@ -1,3 +1,4 @@
+
 const express = require('express')
 const http = require('http')
 const path = require('path')
@@ -20,6 +21,24 @@ server.listen(3000, function () {
   console.log('http://localhost:3000')
 })
 
+const gridSize = 40;
+const gridWidth = 800 / gridSize;  // Assuming 800 is the width of your game
+const gridHeight = 600 / gridSize; // Assuming 600 is the height of your game
+
+
+function getRandomX() {
+  return Math.floor(Math.random() * gridWidth) * gridSize + gridSize/2;
+}
+
+function getRandomY() {
+  return Math.floor(Math.random() * gridHeight) * gridSize + gridSize/2;
+}
+
+let apple = {
+  x: getRandomX(),
+  y: getRandomY()
+};
+
 var players = {}
 
 io.on('connection', function (socket) {
@@ -34,12 +53,18 @@ io.on('connection', function (socket) {
   }
   socket.emit('currentPlayers', players)
   socket.broadcast.emit('newPlayer', players[socket.id])
- 
+  socket.emit('applePosition', apple);
   socket.on('disconnect', function () {
     console.log('player [' + socket.id + '] disconnected')
     delete players[socket.id]
     io.emit('playerDisconnected', socket.id)
   })
+
+  socket.on('appleEaten', function() {
+    apple.x = getRandomX();
+    apple.y = getRandomY();
+    io.emit('applePosition', apple);
+  });
 
   socket.on('playerMovement', function (movementData) {
     players[socket.id].x = movementData.x
