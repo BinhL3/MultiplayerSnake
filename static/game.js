@@ -16,7 +16,7 @@ var config = {
   scene: { preload, create, update }
 }
 
-
+var snakeAlive = true; 
 var gridSize = 40;
 var gridWidth = config.width / gridSize; 
 var gridHeight = config.height / gridSize; 
@@ -28,6 +28,7 @@ function preload() {
   this.load.image('apple', 'static/assets/apple.png');
   this.load.image('headUp', 'static/assets/head_up.png');
   this.load.image('body_vertical', 'static/assets/body_vertical.png');
+  this.load.image('body_vertical_alt', 'static/assets/body_vertical_alt.png');
   this.load.image('headDown', 'static/assets/head_down.png');
   this.load.image('headLeft', 'static/assets/head_left.png');
   this.load.image('headRight', 'static/assets/head_right.png');
@@ -103,6 +104,9 @@ function addPlayer(self, playerInfo) {
   self.snake.setTint(playerInfo.color);
   self.snake.setDrag(1000);
   self.snake.currentDirection = self.directions.RIGHT;
+  self.snake.segments = [];
+ 
+
 }
 
 function addOtherPlayers(self, playerInfo) {
@@ -127,6 +131,10 @@ function update() {
         this.snake.setTexture("headRight");
           this.snake.currentDirection = this.directions.RIGHT;
       }
+    
+      handleSelfCollision.call(this);
+      //handleWallCollision.call(this);
+      
       this.physics.add.collider(this.snake, this.apple, handleAppleCollision, null, this);
 
       let dirKey = Object.keys(this.directions).find(key => this.directions[key].equals(this.snake.currentDirection));
@@ -146,19 +154,104 @@ function update() {
       this.snake.oldPosition = currPosition;
   }
 }
+function handleWallCollision() {
+  const headX = this.snake.x;
+  const headY = this.snake.y;
+
+  // Check if the head has hit any of the game boundaries
+
+  if (
+    headX < 0 || headX >= config.width ||
+    headY < 0 || headY >= config.height
+  ) {
+    gameOver();
+  }
+}
+function handleSelfCollision() {
+  const headX = this.snake.x;
+  const headY = this.snake.y;
+  // Check if the head collides with any of the body segments
+  for (const segment of this.snake.segments) {
+    if (segment.x === headX && segment.y === headY) {
+        gameOver();
+      return true; 
+    }
+  }
+  return false; 
+}
+
+function gameOver() {
+  snakeAlive = false;
+
+  // Stop snake and segment movement here
+  if (this.snake) {
+    this.snake.setVelocity(0, 0);
+
+    if (this.snake.segments) {
+      this.snake.segments.forEach(segment => {
+        segment.setVelocity(0, 0);
+      });
+    }
+  }
+
+}
+
 
 function moveSnake() {
+  if (!snakeAlive) {
+    return;
+  }
+
+  const oldHeadX = this.snake.x;
+  const oldHeadY = this.snake.y;
+
   this.snake.x += this.snake.currentDirection.x * gridSize;
   this.snake.y += this.snake.currentDirection.y * gridSize;
+
+  let prevX = oldHeadX;
+  let prevY = oldHeadY;
+
+  this.snake.segments.forEach(segment => {
+    const tempX = segment.x;
+    const tempY = segment.y;
+
+    segment.x = prevX;
+    segment.y = prevY;
+
+    prevX = tempX;
+    prevY = tempY;
+  });
+
+
+  // If the snake's length exceeds its segments, remove the last segment
+  if (this.snake.segments.length > this.snake.body.length) {
+    const removedSegment = this.snake.segments.pop();
+    removedSegment.destroy();
+  }
 }
 
 function handleAppleCollision(snake, apple) {
-if (this.appleEatenFlag) {
-    return;
-}
+  if (this.appleEatenFlag) {
+      return;
+  }
 
-this.appleEatenFlag = true;
-this.socket.emit('appleEaten');
+  this.appleEatenFlag = true;
+
+  if (this.snake.segments.length % 2 ==0){
+    const newSegment = this.physics.add
+    .image(1, 1, 'body_vertical')
+    .setOrigin(8, 8)
+    .setDisplaySize(40, 40);
+    snake.segments.push(newSegment);
+  }else{
+    const newSegment = this.physics.add
+    .image(1, 1, 'body_vertical_alt')
+    .setOrigin(8, 8)
+    .setDisplaySize(40, 40);
+    snake.segments.push(newSegment);
+  }
+
+  this.socket.emit('appleEaten');
 }
 
 function getImageForDirection(direction) {
