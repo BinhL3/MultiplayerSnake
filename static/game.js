@@ -195,9 +195,7 @@ function gameOver() {
       });
     }
   }
-
 }
-
 
 function moveSnake() {
   if (!snakeAlive) {
