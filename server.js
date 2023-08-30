@@ -16,6 +16,7 @@ app.use('/static', express.static(__dirname + '/static'))
 app.get('/', function (request, response) {
   response.sendFile(path.join(__dirname, 'main.html'))
 })
+
 app.get('/index.html', function (request, response) {
   response.sendFile(path.join(__dirname, 'index.html'))
 })
@@ -25,8 +26,8 @@ server.listen(3000, function () {
 })
 
 const gridSize = 40;
-const gridWidth = 800 / gridSize;  // Assuming 800 is the width of your game
-const gridHeight = 600 / gridSize; // Assuming 600 is the height of your game
+const gridWidth = 800 / gridSize;
+const gridHeight = 600 / gridSize;
 
 
 function getRandomX() {
@@ -45,7 +46,6 @@ let apple = {
 var players = {}
 
 io.on('connection', function (socket) {
-  console.log('player [' + socket.id + '] connected')
 
   players[socket.id] = {
     x: 30,
@@ -55,6 +55,7 @@ io.on('connection', function (socket) {
     color: getRandomColor(),
     segments: []
   }
+
   socket.emit('currentPlayers', players)
   socket.broadcast.emit('newPlayer', players[socket.id])
   socket.emit('applePosition', apple);
@@ -78,8 +79,25 @@ io.on('connection', function (socket) {
     socket.broadcast.emit('playerMoved', players[socket.id])
   })
 
-  socket.on('playerDead', function() {
-    socket.broadcast.emit('removePlayer', socket.id);
+  socket.on('snakeDead', function (snakeId) {
+    io.emit('snakeDead', snakeId);    
+  });
+
+  socket.on('setUsername', function (name) {
+    players[socket.id].username = name;
+  });
+
+  socket.on('respawn', function (respawnData) {
+    players[socket.id] = {
+      x: respawnData.x,
+      y: respawnData.y,
+      direction: respawnData.direction,
+      playerId: socket.id,
+      color: getRandomColor(),
+      segments: respawnData.segments
+    };
+  
+    io.emit('currentPlayers', players);
   });
 })
 

@@ -1,4 +1,3 @@
-
 var config = {
   type: Phaser.AUTO,
   parent: 'mygame',
@@ -18,6 +17,7 @@ var config = {
 
 var snakeAlive = true; 
 var gridSize = 40;
+var score = 0;
 var gridWidth = config.width / gridSize; 
 var gridHeight = config.height / gridSize; 
 
@@ -49,6 +49,7 @@ function create() {
   this.socket = io()
   this.otherPlayers = this.physics.add.group()
 
+  
   this.add.grid(config.width / 2, config.height / 2, config.width, config.height, gridSize, gridSize, 0xacd05e).setAltFillStyle(0xb3d665).setOutlineStyle();
 
   this.socket.on('currentPlayers', function (players) {
@@ -80,17 +81,17 @@ function create() {
 
   this.cursors = this.input.keyboard.createCursorKeys()
 
-this.socket.on('playerMoved', function (playerInfo) {
-  self.otherPlayers.getChildren().forEach(function (otherPlayer) {
-    if (playerInfo.playerId === otherPlayer.playerId) {
-      otherPlayer.setPosition(playerInfo.x, playerInfo.y);
-      const imageKey = getImageForDirection(playerInfo.direction);
-      otherPlayer.setTexture(imageKey);
-      
-      updateOtherPlayerSegments.call(self, otherPlayer, playerInfo.segments);
-    }
+  this.socket.on('playerMoved', function (playerInfo) {
+    self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+      if (playerInfo.playerId === otherPlayer.playerId) {
+        otherPlayer.setPosition(playerInfo.x, playerInfo.y);
+        const imageKey = getImageForDirection(playerInfo.direction);
+        otherPlayer.setTexture(imageKey);
+        
+        updateOtherPlayerSegments.call(self, otherPlayer, playerInfo.segments);
+      }
+    });
   });
-});
 
   this.time.addEvent({
       delay: 200,
@@ -98,7 +99,26 @@ this.socket.on('playerMoved', function (playerInfo) {
       callbackScope: this,
       loop: true
   });
-
+  
+this.socket.on('snakeDead', function (snakeId) {
+    if (snakeId === self.socket.id) {
+      gameOver(self);
+    } else {
+      self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+        if (snakeId === otherPlayer.playerId) {
+          if (otherPlayer.segments) {
+            otherPlayer.segments.forEach(segment => {
+              segment.destroy();
+            });
+            otherPlayer.segments = [];
+          }
+          
+          otherPlayer.destroy();
+        }
+      });
+    }
+  });
+  
 }
 
 function addPlayer(self, playerInfo) {
@@ -181,10 +201,10 @@ function handleSelfCollision() {
   }
   return false; 
 }
+
 function gameOver(scene) {
   snakeAlive = false;
 
-  // Stop snake and segment movement here
   if (scene.snake) {
     scene.snake.setVelocity(0, 0);
 
@@ -195,8 +215,24 @@ function gameOver(scene) {
     }
   }
 
-  // Delayed task to delete snake and its segments
-  scene.time.delayedCall(2000, () => {
+  const gameOverText = scene.add.text(config.width / 2, config.height / 2, 'Game Over', {
+    fontSize: '64px',
+    fill: '#ff0000'
+  });
+
+  gameOverText.setOrigin(0.5, 0.5);
+  
+  const scoreText = scene.add.text(config.width / 2, config.height / 2 + 70, `Score: ${score}`, {
+    fontSize: '32px',
+    fill: '#ffffff'
+  });
+  
+  scoreText.setOrigin(0.5, 0.5);
+
+
+  scene.time.delayedCall(1000, () => {
+
+    gameOverText.destroy();
 
     if (scene.snake && scene.snake.segments) {
       scene.snake.segments.forEach(segment => {
@@ -211,7 +247,11 @@ function gameOver(scene) {
     }
 
   }, [], scene);
+
+
+  scene.socket.emit('snakeDead', scene.socket.id);
 }
+
 
 
 function moveSnake() {
@@ -239,8 +279,6 @@ function moveSnake() {
     prevY = tempY;
   });
 
-
-  // If the snake's length exceeds its segments, remove the last segment
   if (this.snake.segments.length > this.snake.body.length) {
     const removedSegment = this.snake.segments.pop();
     removedSegment.destroy();
@@ -252,6 +290,7 @@ function handleAppleCollision(snake, apple) {
   if (this.appleEatenFlag) {
       return;
   }
+  score += 1;
 
   this.appleEatenFlag = true;
 
@@ -308,4 +347,9 @@ function updateOtherPlayerSegments(otherPlayer, segments) {
     const lastSegment = otherPlayer.segments.pop();
     lastSegment.destroy();
   }
+  if (!segments.length) {
+    otherPlayer.segments.forEach(segment => segment.destroy());
+    otherPlayer.segments = [];
+  }
 }
+
