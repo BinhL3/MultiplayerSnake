@@ -1,3 +1,4 @@
+
 var config = {
   type: Phaser.AUTO,
   parent: 'mygame',
@@ -166,36 +167,52 @@ function handleWallCollision() {
     headX < 0 || headX >= config.width ||
     headY < 0 || headY >= config.height
   ) {
-    gameOver();
+    gameOver(this);
   }
 }
 function handleSelfCollision() {
   const headX = this.snake.x;
   const headY = this.snake.y;
-  // Check if the head collides with any of the body segments
   for (const segment of this.snake.segments) {
     if (segment.x === headX && segment.y === headY) {
-        gameOver();
+        gameOver(this);
       return true; 
     }
   }
   return false; 
 }
-
-function gameOver() {
+function gameOver(scene) {
   snakeAlive = false;
 
   // Stop snake and segment movement here
-  if (this.snake) {
-    this.snake.setVelocity(0, 0);
+  if (scene.snake) {
+    scene.snake.setVelocity(0, 0);
 
-    if (this.snake.segments) {
-      this.snake.segments.forEach(segment => {
+    if (scene.snake.segments) {
+      scene.snake.segments.forEach(segment => {
         segment.setVelocity(0, 0);
       });
     }
   }
+
+  // Delayed task to delete snake and its segments
+  scene.time.delayedCall(2000, () => {
+
+    if (scene.snake && scene.snake.segments) {
+      scene.snake.segments.forEach(segment => {
+        segment.destroy();
+      });
+      scene.snake.segments = [];
+    }
+
+    if (scene.snake) {
+      scene.snake.destroy(); 
+      scene.snake = null; 
+    }
+
+  }, [], scene);
 }
+
 
 function moveSnake() {
   if (!snakeAlive) {
@@ -242,13 +259,15 @@ function handleAppleCollision(snake, apple) {
     const newSegment = this.physics.add
     .image(1, 1, 'body_vertical')
     .setOrigin(8, 8)
-    .setDisplaySize(40, 40);
+    .setDisplaySize(40, 40)
+    .setTint(this.snake.tintTopLeft);
     snake.segments.push(newSegment);
   }else{
     const newSegment = this.physics.add
     .image(1, 1, 'body_vertical_alt')
     .setOrigin(8, 8)
-    .setDisplaySize(40, 40);
+    .setDisplaySize(40, 40)
+    .setTint(this.snake.tintTopLeft);
     snake.segments.push(newSegment);
   }
 
@@ -272,7 +291,8 @@ function updateOtherPlayerSegments(otherPlayer, segments) {
       const segment = this.physics.add
         .image(segmentData.x, segmentData.y, imageKey)
         .setOrigin(8, 8)
-        .setDisplaySize(40, 40);
+        .setDisplaySize(40, 40)
+        .setTint(otherPlayer.tintTopLeft);
       otherPlayer.segments.push(segment);
     }
   }

@@ -77,6 +77,10 @@ io.on('connection', function (socket) {
     players[socket.id].segments = movementData.segments;
     socket.broadcast.emit('playerMoved', players[socket.id])
   })
+
+  socket.on('playerDead', function() {
+    socket.broadcast.emit('removePlayer', socket.id);
+  });
 })
 
 function getRandomColor() {
