@@ -1,8 +1,8 @@
 var config = {
   type: Phaser.AUTO,
   parent: 'mygame',
-  width: 800,
-  height: 600,
+  width: 1600,
+  height: 1200,
   backgroundColor: '#ffffff',
   autoCenter: true,
   physics: {
@@ -36,6 +36,7 @@ function preload() {
 
 function create() {
 
+ 
   this.directions = {
       UP: new Phaser.Math.Vector2(0, -1),
       DOWN: new Phaser.Math.Vector2(0, 1),
@@ -49,18 +50,24 @@ function create() {
   this.socket = io()
   this.otherPlayers = this.physics.add.group()
 
-  
+
   this.add.grid(config.width / 2, config.height / 2, config.width, config.height, gridSize, gridSize, 0xacd05e).setAltFillStyle(0xb3d665).setOutlineStyle();
 
   this.socket.on('currentPlayers', function (players) {
+
     Object.keys(players).forEach(function (id) {
+
       if (players[id].playerId === self.socket.id) {
+    
+
         addPlayer(self, players[id])
+      
       } else {
         addOtherPlayers(self, players[id])
       }
     })
   })
+
 
   this.socket.on('newPlayer', function (playerInfo) {
     addOtherPlayers(self, playerInfo)
@@ -122,16 +129,20 @@ this.socket.on('snakeDead', function (snakeId) {
 }
 
 function addPlayer(self, playerInfo) {
-  self.snake = self.physics.add.image(playerInfo.x, playerInfo.y, 'headRight').setOrigin(8, 8).setDisplaySize(40, 40);
+  self.snake = self.physics.add.image(playerInfo.x, playerInfo.y, 'headRight').setOrigin(0, 0).setDisplaySize(40, 40);
   self.snake.setCollideWorldBounds(true);
   self.snake.setTint(playerInfo.color);
   self.snake.setDrag(1000);
   self.snake.currentDirection = self.directions.RIGHT;
   self.snake.segments = [];
+
+  self.cameras.main.startFollow(self.snake);
+  self.snake.setDeadZone(100,100);
+  
 }
 
 function addOtherPlayers(self, playerInfo) {
-  const otherPlayer = self.physics.add.image(playerInfo.x, playerInfo.y, 'snake').setOrigin(8, 8).setDisplaySize(40, 40);
+  const otherPlayer = self.physics.add.image(playerInfo.x, playerInfo.y, 'snake').setOrigin(0, 0).setDisplaySize(40, 40);
   otherPlayer.playerId = playerInfo.playerId;
   otherPlayer.setTint(playerInfo.color);
   otherPlayer.segments = [];
@@ -155,7 +166,7 @@ function update() {
       }
     
       handleSelfCollision.call(this);
-      //handleWallCollision.call(this);
+      handleWallCollision.call(this);
       
       this.physics.add.collider(this.snake, this.apple, handleAppleCollision, null, this);
 
@@ -171,6 +182,7 @@ function update() {
       if (this.snake.oldPosition && (
           currPosition.x !== this.snake.oldPosition.x ||
           currPosition.y !== this.snake.oldPosition.y)) {
+         
           this.socket.emit('playerMovement', currPosition);
       }
 
@@ -181,11 +193,10 @@ function handleWallCollision() {
   const headX = this.snake.x;
   const headY = this.snake.y;
 
-  // Check if the head has hit any of the game boundaries
-
+  // Adjusted boundaries considering the gridSize and the snake's origin.
   if (
-    headX < 0 || headX >= config.width ||
-    headY < 0 || headY >= config.height
+    headX  < 0  || headX > config.width ||
+    headY < 0  || headY > config.height  
   ) {
     gameOver(this);
   }
@@ -262,9 +273,9 @@ function moveSnake() {
   const oldHeadX = this.snake.x;
   const oldHeadY = this.snake.y;
 
-  this.snake.x += this.snake.currentDirection.x * gridSize;
-  this.snake.y += this.snake.currentDirection.y * gridSize;
-
+  this.snake.x = this.snake.x + this.snake.currentDirection.x * gridSize;
+  this.snake.y = this.snake.y+ this.snake.currentDirection.y * gridSize;
+ 
   let prevX = oldHeadX;
   let prevY = oldHeadY;
 
@@ -294,21 +305,31 @@ function handleAppleCollision(snake, apple) {
 
   this.appleEatenFlag = true;
 
-  if (this.snake.segments.length % 2 ==0){
-    const newSegment = this.physics.add
-    .image(1, 1, 'body_vertical')
-    .setOrigin(8, 8)
+if (this.snake.segments.length % 2 === 0) {
+  // Even segment count, use 'body_vertical'
+  const newSegment = this.physics.add
+    .image(
+      this.snake.x - this.snake.currentDirection.x * gridSize,
+      this.snake.y - this.snake.currentDirection.y * gridSize,
+      'body_vertical'
+    )
+    .setOrigin(0, 0)
     .setDisplaySize(40, 40)
     .setTint(this.snake.tintTopLeft);
-    snake.segments.push(newSegment);
-  }else{
-    const newSegment = this.physics.add
-    .image(1, 1, 'body_vertical_alt')
-    .setOrigin(8, 8)
+  this.snake.segments.push(newSegment);
+} else {
+  // Odd segment count, use 'body_vertical_alt'
+  const newSegment = this.physics.add
+    .image(
+      this.snake.x - this.snake.currentDirection.x * gridSize,
+      this.snake.y - this.snake.currentDirection.y * gridSize,
+      'body_vertical_alt'
+    )
+    .setOrigin(0, 0)
     .setDisplaySize(40, 40)
     .setTint(this.snake.tintTopLeft);
-    snake.segments.push(newSegment);
-  }
+  this.snake.segments.push(newSegment);
+}
 
   this.socket.emit('appleEaten');
 }
@@ -329,7 +350,7 @@ function updateOtherPlayerSegments(otherPlayer, segments) {
       const imageKey = i % 2 === 0 ? 'body_vertical' : 'body_vertical_alt';
       const segment = this.physics.add
         .image(segmentData.x, segmentData.y, imageKey)
-        .setOrigin(8, 8)
+        .setOrigin(0, 0)
         .setDisplaySize(40, 40)
         .setTint(otherPlayer.tintTopLeft);
       otherPlayer.segments.push(segment);

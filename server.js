@@ -26,8 +26,8 @@ server.listen(3000, function () {
 })
 
 const gridSize = 40;
-const gridWidth = 800 / gridSize;
-const gridHeight = 600 / gridSize;
+const gridWidth = 1600 / gridSize;
+const gridHeight = 1200 / gridSize;
 
 
 function getRandomX() {
@@ -48,13 +48,15 @@ var players = {}
 io.on('connection', function (socket) {
 
   players[socket.id] = {
-    x: 30,
-    y: 30,
+    x: 40,
+    y: 40,
     direction: "UP",
     playerId: socket.id,
     color: getRandomColor(),
     segments: []
   }
+
+ 
 
   socket.emit('currentPlayers', players)
   socket.broadcast.emit('newPlayer', players[socket.id])
@@ -72,11 +74,13 @@ io.on('connection', function (socket) {
   });
 
   socket.on('playerMovement', function (movementData) {
+
     players[socket.id].x = movementData.x
     players[socket.id].y = movementData.y
     players[socket.id].direction = movementData.direction
     players[socket.id].segments = movementData.segments;
     socket.broadcast.emit('playerMoved', players[socket.id])
+
   })
 
   socket.on('snakeDead', function (snakeId) {
