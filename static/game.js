@@ -23,6 +23,8 @@ var gridHeight = config.height / gridSize;
 
 var game = new Phaser.Game(config)
 
+var playersData;
+
 function preload() {
   this.load.image('snake', 'static/assets/head_up.png');
   this.load.image('apple', 'static/assets/apple.png');
@@ -54,7 +56,7 @@ function create() {
   this.add.grid(config.width / 2, config.height / 2, config.width, config.height, gridSize, gridSize, 0xacd05e).setAltFillStyle(0xb3d665).setOutlineStyle();
 
   this.socket.on('currentPlayers', function (players) {
-
+    playersData = players;
     Object.keys(players).forEach(function (id) {
 
       if (players[id].playerId === self.socket.id) {
@@ -137,7 +139,7 @@ function addPlayer(self, playerInfo) {
   self.snake.segments = [];
 
   self.cameras.main.startFollow(self.snake);
-  self.snake.setDeadZone(100,100);
+  self.snake.setDeadZone(100, 100);
   
 }
 
@@ -164,6 +166,11 @@ function update() {
         this.snake.setTexture("headRight");
           this.snake.currentDirection = this.directions.RIGHT;
       }
+
+      if (checkCollisionWithOtherPlayers(this.snake)) {
+        gameOver(this);
+        return;
+      }
     
       handleSelfCollision.call(this);
       handleWallCollision.call(this);
@@ -189,6 +196,26 @@ function update() {
       this.snake.oldPosition = currPosition;
   }
 }
+
+function checkCollisionWithOtherPlayers(player) {
+  let headX = player.x;
+  let headY = player.y;
+
+  for (const playerId in playersData) {
+    const otherPlayer = playersData[playerId];
+
+    if (otherPlayer !== player) {
+      for (const segment of otherPlayer.segments) {
+        if (segment.x === headX && segment.y === headY) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
 function handleWallCollision() {
   const headX = this.snake.x;
   const headY = this.snake.y;

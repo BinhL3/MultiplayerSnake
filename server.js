@@ -74,14 +74,17 @@ io.on('connection', function (socket) {
   });
 
   socket.on('playerMovement', function (movementData) {
-
     players[socket.id].x = movementData.x
     players[socket.id].y = movementData.y
     players[socket.id].direction = movementData.direction
     players[socket.id].segments = movementData.segments;
-    socket.broadcast.emit('playerMoved', players[socket.id])
 
-  })
+    if (checkCollisionWithPlayers(socket.id)) {
+      io.emit('snakeDead', socket.id);
+    } else {
+      socket.broadcast.emit('playerMoved', players[socket.id])
+    }
+  });
 
   socket.on('snakeDead', function (snakeId) {
     io.emit('snakeDead', snakeId);    
@@ -107,4 +110,23 @@ io.on('connection', function (socket) {
 
 function getRandomColor() {
   return '0x' + Math.floor(Math.random() * 16777215).toString(16)
+}
+
+function checkCollisionWithPlayers(playerId) {
+  let currentPlayer = players[playerId];
+  let headX = currentPlayer.x;
+  let headY = currentPlayer.y;
+
+  for (let otherPlayerId in players) {
+    let otherPlayer = players[otherPlayerId];
+
+    if (otherPlayerId !== playerId) {
+      for (let segment of otherPlayer.segments) {
+        if (segment.x === headX && segment.y === headY) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
