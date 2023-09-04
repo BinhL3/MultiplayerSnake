@@ -423,12 +423,12 @@ function manageApples(scene, playerCount) {
 function addApple(scene) {
     let appleX = Phaser.Math.Between(0, config.width - gridSize);
     let appleY = Phaser.Math.Between(0, config.height - gridSize);
-    scene.apple = scene.physics.add.image(appleX, appleY, 'apple').setDisplaySize(40, 40).setDepth(1);
+    let apple = scene.physics.add.image(appleX, appleY, 'apple').setDisplaySize(40, 40).setDepth(1);
     scene.apples.add(apple);
 }
 
 function removeApple(scene) {
-  const appleToRemove = scene.apples.getFirstAlive();
+  let appleToRemove = scene.apples.getFirstAlive();
   if (appleToRemove) {
     appleToRemove.destroy();
   }
