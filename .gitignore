@@ -2937,6 +2937,5 @@ node_modules/utils-merge/index.js
 node_modules/utils-merge/LICENSE
 node_modules/utils-merge/package.json
 node_modules/utils-merge/README.md
-package-lock.json
 node_modules/
 .DS_Store
