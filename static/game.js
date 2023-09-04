@@ -37,8 +37,6 @@ function preload() {
 }
 
 function create() {
-
- 
   this.directions = {
       UP: new Phaser.Math.Vector2(0, -1),
       DOWN: new Phaser.Math.Vector2(0, 1),
@@ -46,7 +44,6 @@ function create() {
       RIGHT: new Phaser.Math.Vector2(1, 0)
   };
 
-  this.apple = this.physics.add.image(300, 300, 'apple').setDisplaySize(40, 40).setDepth(1);
   this.apples = this.physics.add.group();
 
   const self = this
@@ -54,7 +51,16 @@ function create() {
   this.otherPlayers = this.physics.add.group()
 
 
-  this.add.grid(config.width / 2, config.height / 2, config.width, config.height, gridSize, gridSize, 0xacd05e).setAltFillStyle(0xb3d665).setOutlineStyle();
+  this.add.grid(config.width / 2,
+                config.height / 2,
+                config.width,
+                config.height,
+                gridSize,
+                gridSize,
+                0xacd05e
+              ).setAltFillStyle(0xb3d665).setOutlineStyle();
+
+  manageApples(this, 1);
 
   this.socket.on('currentPlayers', function (players) {
     playersData = players;
@@ -331,40 +337,39 @@ function moveSnake() {
 }
 
 function handleAppleCollision(snake, apple) {
-  if (this.appleEatenFlag) {
-      return;
+  if (apple.active) {
+    apple.setActive(false).setVisible(false);
+    score += 1;
+    addApple(this);
+
+    if (this.snake.segments.length % 2 === 0) {
+      // Even segment count, use 'body_vertical'
+      const newSegment = this.physics.add
+        .image(
+          this.snake.x - this.snake.currentDirection.x * gridSize,
+          this.snake.y - this.snake.currentDirection.y * gridSize,
+          'body_vertical'
+        )
+        .setOrigin(0, 0)
+        .setDisplaySize(40, 40)
+        .setTint(this.snake.tintTopLeft);
+      this.snake.segments.push(newSegment);
+    } else {
+      // Odd segment count, use 'body_vertical_alt'
+      const newSegment = this.physics.add
+        .image(
+          this.snake.x - this.snake.currentDirection.x * gridSize,
+          this.snake.y - this.snake.currentDirection.y * gridSize,
+          'body_vertical_alt'
+        )
+        .setOrigin(0, 0)
+        .setDisplaySize(40, 40)
+        .setTint(this.snake.tintTopLeft);
+      this.snake.segments.push(newSegment);
+    }
+
+    this.socket.emit('appleEaten');
   }
-  score += 1;
-
-  this.appleEatenFlag = true;
-
-  if (this.snake.segments.length % 2 === 0) {
-    // Even segment count, use 'body_vertical'
-    const newSegment = this.physics.add
-      .image(
-        this.snake.x - this.snake.currentDirection.x * gridSize,
-        this.snake.y - this.snake.currentDirection.y * gridSize,
-        'body_vertical'
-      )
-      .setOrigin(0, 0)
-      .setDisplaySize(40, 40)
-      .setTint(this.snake.tintTopLeft);
-    this.snake.segments.push(newSegment);
-  } else {
-    // Odd segment count, use 'body_vertical_alt'
-    const newSegment = this.physics.add
-      .image(
-        this.snake.x - this.snake.currentDirection.x * gridSize,
-        this.snake.y - this.snake.currentDirection.y * gridSize,
-        'body_vertical_alt'
-      )
-      .setOrigin(0, 0)
-      .setDisplaySize(40, 40)
-      .setTint(this.snake.tintTopLeft);
-    this.snake.segments.push(newSegment);
-  }
-
-  this.socket.emit('appleEaten');
 }
 
 function getImageForDirection(direction) {
@@ -407,6 +412,31 @@ function updateOtherPlayerSegments(otherPlayer, segments) {
   }
 }
 
+function addApple(scene) {
+  let appleX, appleY;
+  let isValidLocation = false;
+
+  while (!isValidLocation) {
+    appleX = Phaser.Math.Between(1, gridWidth - 2) * gridSize + gridSize / 2;
+    appleY = Phaser.Math.Between(1, gridHeight - 2) * gridSize + gridSize / 2;
+
+    isValidLocation = !scene.snake || (
+      !scene.snake.segments.some(segment => segment.x === appleX && segment.y === appleY) &&
+      !scene.otherPlayers.getChildren().some(player => player.segments.some(segment => segment.x === appleX && segment.y === appleY))
+    );
+  }
+
+  const apple = scene.physics.add.image(appleX, appleY, 'apple').setDisplaySize(40, 40).setDepth(1);
+  scene.apples.add(apple);
+}
+
+function removeApple(scene) {
+  let appleToRemove = scene.apples.getFirstAlive();
+  if (appleToRemove) {
+    appleToRemove.destroy();
+  }
+}
+
 function manageApples(scene, playerCount) {
   let currentAppleCount = scene.apples.countActive(true);
   let applesNeeded = playerCount - currentAppleCount;
@@ -419,19 +449,5 @@ function manageApples(scene, playerCount) {
     for (let i = 0; i < Math.abs(applesNeeded); i++) {
       removeApple(scene);
     }
-  }
-}
-
-function addApple(scene) {
-  let appleX = Phaser.Math.Between(gridSize, config.width - gridSize);
-  let appleY = Phaser.Math.Between(gridSize, config.height - gridSize);
-  let apple = scene.physics.add.image(appleX, appleY, 'apple').setDisplaySize(40, 40).setDepth(1);
-  scene.apples.add(apple);
-}
-
-function removeApple(scene) {
-  let appleToRemove = scene.apples.getFirstAlive();
-  if (appleToRemove) {
-    appleToRemove.destroy();
   }
 }
