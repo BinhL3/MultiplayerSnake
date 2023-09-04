@@ -47,6 +47,7 @@ function create() {
   };
 
   this.apple = this.physics.add.image(300, 300, 'apple').setDisplaySize(40, 40).setDepth(1);
+  this.apples = this.physics.add.group();
 
   const self = this
   this.socket = io()
@@ -67,21 +68,24 @@ function create() {
       } else {
         addOtherPlayers(self, players[id])
       }
-    })
-  })
+    });
+  });
 
 
   this.socket.on('newPlayer', function (playerInfo) {
     addOtherPlayers(self, playerInfo)
-  })
+
+    manageApples(self, playersData.length)
+  });
 
   this.socket.on('playerDisconnected', function (playerId) {
     self.otherPlayers.getChildren().forEach(function (otherPlayer) {
       if (playerId === otherPlayer.playerId) {
         otherPlayer.destroy()
       }
-    })
-  })
+    });
+    manageApples(self, playersData.length);
+  });
 
   this.socket.on('applePosition', function(appleData) {
     self.apple.setPosition(appleData.x, appleData.y);
@@ -401,3 +405,31 @@ function updateOtherPlayerSegments(otherPlayer, segments) {
   }
 }
 
+function manageApples(scene, playerCount) {
+  let currentAppleCount = scene.apples.countActive(true);
+  let applesNeeded = playerCount - currentAppleCount;
+
+  if (applesNeeded > 0) {
+    for (let i = 0; i < applesNeeded; i++) {
+      addApple(scene);
+    }
+  } else if (applesNeeded < 0) {
+    for (let i = 0; i < Math.abs(applesNeeded); i++) {
+      removeApple(scene);
+    }
+  }
+}
+
+function addApple(scene) {
+    let appleX = Phaser.Math.Between(0, config.width - gridSize);
+    let appleY = Phaser.Math.Between(0, config.height - gridSize);
+    scene.apple = scene.physics.add.image(appleX, appleY, 'apple').setDisplaySize(40, 40).setDepth(1);
+    scene.apples.add(apple);
+}
+
+function removeApple(scene) {
+  const appleToRemove = scene.apples.getFirstAlive();
+  if (appleToRemove) {
+    appleToRemove.destroy();
+  }
+}
