@@ -181,7 +181,7 @@ function update() {
       handleSelfCollision.call(this);
       handleWallCollision.call(this);
       
-      this.physics.add.collider(this.snake, this.apple, handleAppleCollision, null, this);
+      this.physics.add.collider(this.snake, this.apples, handleAppleCollision, null, this);
 
       let dirKey = Object.keys(this.directions).find(key => this.directions[key].equals(this.snake.currentDirection));
 
@@ -338,31 +338,31 @@ function handleAppleCollision(snake, apple) {
 
   this.appleEatenFlag = true;
 
-if (this.snake.segments.length % 2 === 0) {
-  // Even segment count, use 'body_vertical'
-  const newSegment = this.physics.add
-    .image(
-      this.snake.x - this.snake.currentDirection.x * gridSize,
-      this.snake.y - this.snake.currentDirection.y * gridSize,
-      'body_vertical'
-    )
-    .setOrigin(0, 0)
-    .setDisplaySize(40, 40)
-    .setTint(this.snake.tintTopLeft);
-  this.snake.segments.push(newSegment);
-} else {
-  // Odd segment count, use 'body_vertical_alt'
-  const newSegment = this.physics.add
-    .image(
-      this.snake.x - this.snake.currentDirection.x * gridSize,
-      this.snake.y - this.snake.currentDirection.y * gridSize,
-      'body_vertical_alt'
-    )
-    .setOrigin(0, 0)
-    .setDisplaySize(40, 40)
-    .setTint(this.snake.tintTopLeft);
-  this.snake.segments.push(newSegment);
-}
+  if (this.snake.segments.length % 2 === 0) {
+    // Even segment count, use 'body_vertical'
+    const newSegment = this.physics.add
+      .image(
+        this.snake.x - this.snake.currentDirection.x * gridSize,
+        this.snake.y - this.snake.currentDirection.y * gridSize,
+        'body_vertical'
+      )
+      .setOrigin(0, 0)
+      .setDisplaySize(40, 40)
+      .setTint(this.snake.tintTopLeft);
+    this.snake.segments.push(newSegment);
+  } else {
+    // Odd segment count, use 'body_vertical_alt'
+    const newSegment = this.physics.add
+      .image(
+        this.snake.x - this.snake.currentDirection.x * gridSize,
+        this.snake.y - this.snake.currentDirection.y * gridSize,
+        'body_vertical_alt'
+      )
+      .setOrigin(0, 0)
+      .setDisplaySize(40, 40)
+      .setTint(this.snake.tintTopLeft);
+    this.snake.segments.push(newSegment);
+  }
 
   this.socket.emit('appleEaten');
 }
