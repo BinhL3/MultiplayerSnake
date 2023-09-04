@@ -75,7 +75,8 @@ function create() {
   this.socket.on('newPlayer', function (playerInfo) {
     addOtherPlayers(self, playerInfo)
 
-    manageApples(self, playersData.length)
+    manageApples(self, Object.keys(playersData).length)
+    console.log(`Player joined. Total players: ${Object.keys(playersData).length}`)
   });
 
   this.socket.on('playerDisconnected', function (playerId) {
@@ -84,7 +85,8 @@ function create() {
         otherPlayer.destroy()
       }
     });
-    manageApples(self, playersData.length);
+    manageApples(self, Object.keys(playersData).length);
+    console.log(`Player left. Total players: ${Object.keys(playersData).length}`)
   });
 
   this.socket.on('applePosition', function(appleData) {
@@ -421,10 +423,10 @@ function manageApples(scene, playerCount) {
 }
 
 function addApple(scene) {
-    let appleX = Phaser.Math.Between(0, config.width - gridSize);
-    let appleY = Phaser.Math.Between(0, config.height - gridSize);
-    let apple = scene.physics.add.image(appleX, appleY, 'apple').setDisplaySize(40, 40).setDepth(1);
-    scene.apples.add(apple);
+  let appleX = Phaser.Math.Between(0, config.width - gridSize);
+  let appleY = Phaser.Math.Between(0, config.height - gridSize);
+  let apple = scene.physics.add.image(appleX, appleY, 'apple').setDisplaySize(40, 40).setDepth(1);
+  scene.apples.add(apple);
 }
 
 function removeApple(scene) {
