@@ -44,12 +44,26 @@ let apple = {
 };
 
 var players = {}
-
+function doesPositionOverlapWithPlayers(x, y) {
+  for (let id in players) {
+    let player = players[id];
+    if (Math.abs(player.x - x) < gridSize && Math.abs(player.y - y) < gridSize) {
+      return true; 
+    }
+  }
+  return false; 
+}
 io.on('connection', function (socket) {
 
+  let x, y;	
+  do {	
+    x = Math.ceil(getRandomX() / 40) * 40;	
+    y = Math.ceil(getRandomY() / 40) * 40;	
+  } while (doesPositionOverlapWithPlayers(x, y));	
+
   players[socket.id] = {
-    x: 40,
-    y: 40,
+    x: x,
+    y: y,
     direction: "UP",
     playerId: socket.id,
     color: getRandomColor(),

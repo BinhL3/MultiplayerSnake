@@ -3,7 +3,7 @@ var config = {
   parent: 'mygame',
   width: 1600,
   height: 1200,
-  backgroundColor: '#ffffff',
+  backgroundColor: '#000000',
   autoCenter: true,
   physics: {
     default: 'arcade',
