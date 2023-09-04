@@ -3,7 +3,7 @@ var config = {
   parent: 'mygame',
   width: 1600,
   height: 1200,
-  backgroundColor: '#000000',
+  backgroundColor: '#00000',
   autoCenter: true,
   physics: {
     default: 'arcade',
@@ -59,6 +59,11 @@ function create() {
                 gridSize,
                 0xacd05e
               ).setAltFillStyle(0xb3d665).setOutlineStyle();
+
+  this.add.rectangle(0, 0, config.width, gridSize, 0xFFFFFF).setOrigin(0, 0); 
+  this.add.rectangle(0, config.height - gridSize, config.width, gridSize, 0xFFFFFF).setOrigin(0, 0);
+  this.add.rectangle(0, 0, gridSize, config.height, 0xFFFFFF).setOrigin(0, 0); 
+  this.add.rectangle(config.width - gridSize, 0, gridSize, config.height, 0xFFFFFF).setOrigin(0, 0); 
 
   manageApples(this, 1);
 
@@ -151,7 +156,6 @@ function addPlayer(self, playerInfo) {
   self.snake.segments = [];
 
   self.cameras.main.startFollow(self.snake);
-  self.snake.setDeadZone(100, 100);
   
 }
 
@@ -234,8 +238,8 @@ function handleWallCollision() {
 
   // Adjusted boundaries considering the gridSize and the snake's origin.
   if (
-    headX  < 0  || headX > config.width ||
-    headY < 0  || headY > config.height  
+    headX  < 40  || headX >= config.width - 40 ||
+    headY < 40  || headY >= config.height  - 40
   ) {
     gameOver(this);
   }
@@ -253,7 +257,7 @@ function handleSelfCollision() {
 }
 
 function gameOver(scene) {
-  snakeAlive = false;
+ 
 
   if (scene.snake) {
     scene.snake.setVelocity(0, 0);
@@ -264,42 +268,45 @@ function gameOver(scene) {
       });
     }
   }
-
-  const gameOverText = scene.add.text(config.width / 2, config.height / 2, 'Game Over', {
-    fontSize: '64px',
-    fill: '#ff0000'
-  });
-
-  gameOverText.setOrigin(0.5, 0.5);
+  if (snakeAlive){
+    const gameOverText = scene.add.text(scene.snake.x, scene.snake.y, 'Game Over', {
+      fontSize: '64px',
+      fill: '#ff0000'
+    });
   
-  const scoreText = scene.add.text(config.width / 2, config.height / 2 + 70, `Score: ${score}`, {
-    fontSize: '32px',
-    fill: '#ffffff'
-  });
+    gameOverText.setOrigin(0.5, 0.5);
+    
+    const scoreText = scene.add.text(scene.snake.x, scene.snake.y + 70, `Score: ${score}`, {
+      fontSize: '32px',
+      fill: '#ffffff'
+    });
+    
+    scoreText.setOrigin(0.5, 0.5);
   
-  scoreText.setOrigin(0.5, 0.5);
+  
+    scene.time.delayedCall(1000, () => {
+  
+      gameOverText.destroy();
+  
+      if (scene.snake && scene.snake.segments) {
+        scene.snake.segments.forEach(segment => {
+          segment.destroy();
+        });
+        scene.snake.segments = [];
+      }
+  
+      if (scene.snake) {
+        scene.snake.destroy(); 
+        scene.snake = null; 
+      }
+  
+    }, [], scene);
+  
+  
+    scene.socket.emit('snakeDead', scene.socket.id);
+  }
 
-
-  scene.time.delayedCall(1000, () => {
-
-    gameOverText.destroy();
-
-    if (scene.snake && scene.snake.segments) {
-      scene.snake.segments.forEach(segment => {
-        segment.destroy();
-      });
-      scene.snake.segments = [];
-    }
-
-    if (scene.snake) {
-      scene.snake.destroy(); 
-      scene.snake = null; 
-    }
-
-  }, [], scene);
-
-
-  scene.socket.emit('snakeDead', scene.socket.id);
+  snakeAlive = false;
 }
 
 
