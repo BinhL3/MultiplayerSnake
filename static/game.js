@@ -423,8 +423,8 @@ function manageApples(scene, playerCount) {
 }
 
 function addApple(scene) {
-  let appleX = Phaser.Math.Between(0, config.width - gridSize);
-  let appleY = Phaser.Math.Between(0, config.height - gridSize);
+  let appleX = Phaser.Math.Between(gridSize, config.width - gridSize);
+  let appleY = Phaser.Math.Between(gridSize, config.height - gridSize);
   let apple = scene.physics.add.image(appleX, appleY, 'apple').setDisplaySize(40, 40).setDepth(1);
   scene.apples.add(apple);
 }
