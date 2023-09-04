@@ -148,11 +148,26 @@ this.socket.on('snakeDead', function (snakeId) {
 }
 
 function addPlayer(self, playerInfo) {
-  self.snake = self.physics.add.image(playerInfo.x, playerInfo.y, 'headRight').setOrigin(0, 0).setDisplaySize(40, 40);
+  initialSnakeAssetDir = null;
+  initialSnakeMovementDir = null;
+  if (playerInfo.direction == "UP"){
+    initialSnakeAssetDir = "headUp";
+    initialSnakeMovementDir = self.directions.UP;
+  }else if (playerInfo.direction == "RIGHT"){
+    initialSnakeAssetDir = "headRight";
+    initialSnakeMovementDir= self.directions.RIGHT;
+  }else if (playerInfo.direction == "LEFT"){
+    initialSnakeAssetDir = "headLeft";
+    initialSnakeMovementDir = self.directions.LEFT;
+  }else{
+    initialSnakeAssetDir = "headDown";
+    initialSnakeMovementDir = self.directions.DOWN;
+  }
+  self.snake = self.physics.add.image(playerInfo.x, playerInfo.y, initialSnakeAssetDir).setOrigin(0, 0).setDisplaySize(40, 40);
   self.snake.setCollideWorldBounds(true);
   self.snake.setTint(playerInfo.color);
   self.snake.setDrag(1000);
-  self.snake.currentDirection = self.directions.RIGHT;
+  self.snake.currentDirection = initialSnakeMovementDir;
   self.snake.segments = [];
 
   self.cameras.main.startFollow(self.snake);

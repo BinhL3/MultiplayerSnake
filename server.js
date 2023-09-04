@@ -30,12 +30,14 @@ const gridWidth = 1600 / gridSize;
 const gridHeight = 1200 / gridSize;
 
 
+const safeZone = 3; 
+
 function getRandomX() {
-  return Math.floor(Math.random() * gridWidth) * gridSize + gridSize/2;
+  return Math.floor(Math.random() * (gridWidth - 2 * safeZone) + safeZone) * gridSize + gridSize/2;
 }
 
 function getRandomY() {
-  return Math.floor(Math.random() * gridHeight) * gridSize + gridSize/2;
+  return Math.floor(Math.random() * (gridHeight - 2 * safeZone) + safeZone) * gridSize + gridSize/2;
 }
 
 let apple = {
@@ -61,10 +63,16 @@ io.on('connection', function (socket) {
     y = Math.ceil(getRandomY() / 40) * 40;	
   } while (doesPositionOverlapWithPlayers(x, y));	
 
+  let direction = "RIGHT"; 
+
+  if (x / 40 > gridWidth / 2) {
+    direction = "LEFT";
+  } 
+
   players[socket.id] = {
     x: x,
     y: y,
-    direction: "UP",
+    direction: direction,
     playerId: socket.id,
     color: getRandomColor(),
     segments: []
